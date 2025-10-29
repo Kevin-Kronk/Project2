@@ -12,10 +12,24 @@ ui <- page_sidebar(
       label = "Shipping Mode",
       choices = 
         list(
+          "Same Day",
           "First Class",
           "Second Class",
           "Standard Class"
-        )
+        ),
+      selected = "Standard Class"
+    ),
+    selectInput(
+      inputId = "region",
+      label = "Region",
+      choices = 
+        list(
+          "Central",
+          "South",
+          "East",
+          "West"
+        ),
+      selected = "Central"
     ),
     sliderInput(
       inputId = "quantity",
@@ -58,7 +72,8 @@ server <- function(input, output) {
 
     # Use isolate to avoid dependence on ship
     isolate(superstore |>
-    filter(superstore$`Ship Mode` == input$ship))
+    filter(superstore$`Ship Mode` == input$ship,
+           superstore$Region == input$region))
     })
 }
 

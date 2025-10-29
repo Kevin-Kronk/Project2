@@ -15,15 +15,206 @@ library(readxl)
 ```
 
 ```{r}
-# May need to make postal code character
-# Might want to explicitly label column types
-superstore <- read_excel("US Superstore data.xls", sheet = 1)
+superstore <- read_excel("US Superstore data.xls", sheet = 1,
+                         col_names = c("Row_ID", "Order_ID", "Order_Date",
+                                       "Ship_Date", "Ship_Mode", "Customer_ID",
+                                       "Customer_Name", "Segment", "Country",
+                                       "City", "State", "Postal_Code",
+                                       "Region", "Product_ID", "Category",
+                                       "Sub_Category", "Product_Name", "Sales",
+                                       "Quantity", "Discount", "Profit"),
+                         col_types = c("numeric", "text", "date", "date",
+                                       "text", "text", "text", "text", "text",
+                                       "text", "text", "text", "text", "text",
+                                       "text", "text", "text", "numeric",
+                                       "numeric", "numeric", "numeric"),
+                         skip = 1
+)
 superstore
 ```
 
 Investigate the data
 
 -   One-way and Two-way contingency tables
+
+Row ID: Double
+
+-   A unique ID for every entry, so it's not useful for telling us anything about the data.
+
+```{r}
+# One-Way Contingency Table
+superstore |>
+  group_by(Row_ID) |>
+  summarize(count = n())
+```
+
+Order ID: Character
+
+-   A unique ID for each order, however there's so many orders that this may not be very useful.
+
+```{r}
+# One-Way Contingency Table
+superstore |>
+  group_by(Order_ID) |>
+  summarize(count = n())
+```
+
+Order Date and Ship Date: both Datetime
+
+-   When the order was made and when it was shipped.
+
+```{r}
+# One-Way Contingency Table
+superstore |>
+  group_by(Order_Date) |>
+  summarize(count = n())
+```
+
+```{r}
+# One-Way Contingency Table
+superstore |>
+  group_by(Ship_Date) |>
+  summarize(count = n())
+```
+
+Ship Mode: Character
+
+-   The type of shipping, good for categorical grouping.
+
+```{r}
+# One-Way Contingency Table
+superstore |>
+  group_by(Ship_Mode) |>
+  summarize(count = n())
+```
+
+Customer ID and Customer Name: both Character
+
+-   A unique ID (and the name) for each customer, if there's a lot of customers this may or may not be useful.
+
+```{r}
+# One-Way Contingency Table
+superstore |>
+  group_by(Customer_Name) |>
+  summarize(count = n())
+```
+
+Segment: Character
+
+-   Type of customer, good for categorical grouping.
+
+```{r}
+# One-Way Contingency Table
+superstore |>
+  group_by(Segment) |>
+  summarize(count = n())
+```
+
+Country: Character
+
+-   I checked and there's only the United States
+
+```{r}
+# One-Way Contingency Table
+superstore |>
+  group_by(Country) |>
+  summarize(count = n())
+```
+
+City: Character
+
+-   City name, may be too many cities to be useful.
+
+```{r}
+# One-Way Contingency Table
+superstore |>
+  group_by(City) |>
+  summarize(count = n())
+```
+
+State: Character
+
+-   State name, could be a categorical grouping variable.
+
+```{r}
+# One-Way Contingency Table
+superstore |>
+  group_by(State) |>
+  summarize(count = n())
+```
+
+Postal Code: Character?
+
+-   The postal code for that area, probably even more numerous than City.
+
+```{r}
+# One-Way Contingency Table
+superstore |>
+  group_by(Postal_Code) |>
+  summarize(count = n())
+```
+
+Region: Character
+
+-   The region of the country of that area, good for categorical grouping.
+
+```{r}
+# One-Way Contingency Table
+superstore |>
+  group_by(Region) |>
+  summarize(count = n())
+```
+
+Product ID and Product Name: Character
+
+-   A unique ID (and name) for each product, too many of them to be useful.
+
+```{r}
+# One-Way Contingency Table
+superstore |>
+  group_by(Product_Name) |>
+  summarize(count = n())
+```
+
+Category: Character
+
+-   The category of the product, good for categorical grouping.
+
+```{r}
+# One-Way Contingency Table
+superstore |>
+  group_by(Category) |>
+  summarize(count = n())
+```
+
+Sub-Category: Character
+
+-   The subcategory of each product, could also use as a categorical grouping variable.
+
+```{r}
+# One-Way Contingency Table
+superstore |>
+  group_by(Sub_Category) |>
+  summarize(count = n())
+```
+
+Sales: Double
+
+-   The sales for that given purchase.
+
+Quantity: Double
+
+-   The number of that item bought in the purchase.
+
+Discount: Double
+
+-   The discount for that purchase.
+
+Profit: Double
+
+-   The profit made on that purchase.
+
+<!-- -->
 
 -   Numerical summaries (means, medians, sds, etc) for quantitative variables at levels of categorical variables.
 
