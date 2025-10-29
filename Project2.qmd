@@ -1,0 +1,38 @@
+---
+title: "Project 2"
+format: html
+editor: visual
+---
+
+## The Data
+
+US Superstore date
+
+```{r}
+# Load libraries
+library(tidyverse)
+library(readxl)
+```
+
+```{r}
+# May need to make postal code character
+# Might want to explicitly label column types
+superstore <- read_excel("US Superstore data.xls", sheet = 1)
+superstore
+```
+
+Investigate the data
+
+-   One-way and Two-way contingency tables
+
+-   Numerical summaries (means, medians, sds, etc) for quantitative variables at levels of categorical variables.
+
+-   Create at least six plots
+
+    -   At least four of these should display multivariate information via the type of graph, by utilizing coloring, grouping, etc.
+
+    -   All plots should have nice labels and titles.
+
+    -   Some kind of faceting should be used somewhere.
+
+    -   At least one plot should be a plot that we didn't cover in class.
