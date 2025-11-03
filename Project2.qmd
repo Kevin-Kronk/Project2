@@ -6,7 +6,7 @@ editor: visual
 
 ## The Data
 
-US Superstore date
+US Superstore data
 
 ```{r}
 # Load libraries
@@ -33,16 +33,25 @@ superstore <- read_excel("US Superstore data.xls", sheet = 1,
 superstore
 ```
 
-Investigate the data
+The US Superstore Data Set has 9994 observations across 21 variables.
 
--   One-way and Two-way contingency tables
+```{r}
+# Add up the number of missing values per column.
+colSums(is.na(superstore))
+```
+
+As you can see there is no missing data in this data set.
+
+### Investigate the data
+
+#### One-way Contingency Tables
 
 Row ID: Double
 
--   A unique ID for every entry, so it's not useful for telling us anything about the data.
+-   A unique ID for every entry.
 
 ```{r}
-# One-Way Contingency Table
+# One-Way Contingency Table for Row ID
 superstore |>
   group_by(Row_ID) |>
   summarize(count = n())
@@ -50,10 +59,10 @@ superstore |>
 
 Order ID: Character
 
--   A unique ID for each order, however there's so many orders that this may not be very useful.
+-   A unique ID for each order, however there's so many orders that this is not useful for subsetting the data.
 
 ```{r}
-# One-Way Contingency Table
+# One-Way Contingency Table  for Order ID
 superstore |>
   group_by(Order_ID) |>
   summarize(count = n())
@@ -64,14 +73,14 @@ Order Date and Ship Date: both Datetime
 -   When the order was made and when it was shipped.
 
 ```{r}
-# One-Way Contingency Table
+# One-Way Contingency Table for Order Date
 superstore |>
   group_by(Order_Date) |>
   summarize(count = n())
 ```
 
 ```{r}
-# One-Way Contingency Table
+# One-Way Contingency Table for Ship Date
 superstore |>
   group_by(Ship_Date) |>
   summarize(count = n())
@@ -82,7 +91,7 @@ Ship Mode: Character
 -   The type of shipping, good for categorical grouping.
 
 ```{r}
-# One-Way Contingency Table
+# One-Way Contingency Table for Ship Mode
 superstore |>
   group_by(Ship_Mode) |>
   summarize(count = n())
@@ -90,10 +99,11 @@ superstore |>
 
 Customer ID and Customer Name: both Character
 
--   A unique ID (and the name) for each customer, if there's a lot of customers this may or may not be useful.
+-   A unique ID (and the name) for each customer. There's too many to use as a subset.
 
 ```{r}
-# One-Way Contingency Table
+# One-Way Contingency Table for Customer Name
+# The One-Way Contingency Table for Customer ID would look similar
 superstore |>
   group_by(Customer_Name) |>
   summarize(count = n())
@@ -104,7 +114,7 @@ Segment: Character
 -   Type of customer, good for categorical grouping.
 
 ```{r}
-# One-Way Contingency Table
+# One-Way Contingency Table for Segment
 superstore |>
   group_by(Segment) |>
   summarize(count = n())
@@ -112,10 +122,10 @@ superstore |>
 
 Country: Character
 
--   I checked and there's only the United States
+-   The Country the order was made in. The United States is the only country.
 
 ```{r}
-# One-Way Contingency Table
+# One-Way Contingency Table for Country
 superstore |>
   group_by(Country) |>
   summarize(count = n())
@@ -123,10 +133,10 @@ superstore |>
 
 City: Character
 
--   City name, may be too many cities to be useful.
+-   The name of the city. There may be too many cities to be useful for subsetting.
 
 ```{r}
-# One-Way Contingency Table
+# One-Way Contingency Table for City
 superstore |>
   group_by(City) |>
   summarize(count = n())
@@ -137,18 +147,18 @@ State: Character
 -   State name, could be a categorical grouping variable.
 
 ```{r}
-# One-Way Contingency Table
+# One-Way Contingency Table for State
 superstore |>
   group_by(State) |>
   summarize(count = n())
 ```
 
-Postal Code: Character?
+Postal Code: Character
 
--   The postal code for that area, probably even more numerous than City.
+-   The postal code for that area. Too many to use as a subsetting variable.
 
 ```{r}
-# One-Way Contingency Table
+# One-Way Contingency Table for Postal Code
 superstore |>
   group_by(Postal_Code) |>
   summarize(count = n())
@@ -156,10 +166,10 @@ superstore |>
 
 Region: Character
 
--   The region of the country of that area, good for categorical grouping.
+-   The region of the country for that order, good for categorical grouping.
 
 ```{r}
-# One-Way Contingency Table
+# One-Way Contingency Table for Region
 superstore |>
   group_by(Region) |>
   summarize(count = n())
@@ -167,10 +177,11 @@ superstore |>
 
 Product ID and Product Name: Character
 
--   A unique ID (and name) for each product, too many of them to be useful.
+-   A unique ID (and name) for each product, too many of them to be used as subsets.
 
 ```{r}
-# One-Way Contingency Table
+# One-Way Contingency Table for Product Name
+# The One-Way Contingency Table for Product ID would look similar
 superstore |>
   group_by(Product_Name) |>
   summarize(count = n())
@@ -181,7 +192,7 @@ Category: Character
 -   The category of the product, good for categorical grouping.
 
 ```{r}
-# One-Way Contingency Table
+# One-Way Contingency Table for Category
 superstore |>
   group_by(Category) |>
   summarize(count = n())
@@ -192,31 +203,193 @@ Sub-Category: Character
 -   The subcategory of each product, could also use as a categorical grouping variable.
 
 ```{r}
-# One-Way Contingency Table
+# One-Way Contingency Table for Sub Category
 superstore |>
   group_by(Sub_Category) |>
   summarize(count = n())
 ```
 
+#### Two-Way Contingency Tables
+
+We can look at the Two-Way Contingency Table of Category and Sub_Category to see which Sub_Categories belong to which Category.
+
+```{r}
+# Two-Way Contingency Table
+superstore |>
+  group_by(Category, Sub_Category) |>
+  summarize(count = n(), .groups = "drop") |>
+  pivot_wider(names_from = Category, values_from = count)
+```
+
+As we can see the:
+
+-   Furniture includes Bookcases, Chairs, Furnishings, and Tables.
+
+-   Office Supplies includes Appliances, Art, Binders, Envelopes, Fasteners, Labels, Paper, Storage, and Supplies.
+
+-   Technology includes Accessories, Copiers, Machines, and Phones.
+
+We can do the same with which States are in each Region.
+
+```{r}
+# Two-Way Contingency Table
+superstore |>
+  group_by(Region, State) |>
+  summarize(count = n(), .groups = "drop") |>
+  pivot_wider(names_from = Region, values_from = count)
+```
+
+Segments of customers across Ship Modes.
+
+```{r}
+# Two-Way Contingency Table
+superstore |>
+  group_by(Ship_Mode, Segment) |>
+  summarize(count = n(), .groups = "drop") |>
+  pivot_wider(names_from = Ship_Mode, values_from = count)
+```
+
+Regions across Ship Modes.
+
+```{r}
+# Two-Way Contingency Table
+superstore |>
+  group_by(Ship_Mode, Region) |>
+  summarize(count = n(), .groups = "drop") |>
+  pivot_wider(names_from = Ship_Mode, values_from = count)
+```
+
+We can look at the different Categories across different Ship Modes.
+
+```{r}
+# Two-Way Contingency Table
+superstore |>
+  group_by(Ship_Mode, Category) |>
+  summarize(count = n(), .groups = "drop") |>
+  pivot_wider(names_from = Ship_Mode, values_from = count)
+```
+
+Next look at the Segment of customers across different Regions.
+
+```{r}
+# Two-Way Contingency Table
+superstore |>
+  group_by(Region, Segment) |>
+  summarize(count = n(), .groups = "drop") |>
+  pivot_wider(names_from = Region, values_from = count) 
+```
+
+Then the Categories of products across different Regions
+
+```{r}
+# Two-Way Contingency Table
+superstore |>
+  group_by(Region, Category) |>
+  summarize(count = n(), .groups = "drop") |>
+  pivot_wider(names_from = Region, values_from = count) 
+```
+
+Finally, the Segment of customers across Categories of products.
+
+```{r}
+# Two-Way Contingency Table
+superstore |>
+  group_by(Category, Segment) |>
+  summarize(count = n(), .groups = "drop") |>
+  pivot_wider(names_from = Category, values_from = count) 
+```
+
+#### Numerical Summaries
+
 Sales: Double
 
--   The sales for that given purchase.
+-   The sales money for that given purchase.
+
+```{r}
+# Summary Statistics for Sales
+summary(superstore$Sales)
+paste0("Standard Deviation: ", round(sd(superstore$Sales), 3))
+```
 
 Quantity: Double
 
 -   The number of that item bought in the purchase.
 
+```{r}
+# Summary Statistics for Quantity
+summary(superstore$Quantity)
+paste0("Standard Deviation: ", round(sd(superstore$Quantity), 3))
+```
+
 Discount: Double
 
--   The discount for that purchase.
+-   The discount for that purchase. Looks like it refers to a percent, like 40% off.
+
+```{r}
+# Summary Statistics for Discount
+summary(superstore$Discount)
+paste0("Standard Deviation: ", round(sd(superstore$Discount), 3))
+```
 
 Profit: Double
 
 -   The profit made on that purchase.
 
-<!-- -->
+```{r}
+# Summary Statistics for Profit
+summary(superstore$Profit)
+paste0("Standard Deviation: ", round(sd(superstore$Profit), 3))
+```
 
--   Numerical summaries (means, medians, sds, etc) for quantitative variables at levels of categorical variables.
+We can look at the summary statistics of Sales per Region.
+
+```{r}
+# Numerical Summary Statistics 
+superstore |>
+  group_by(Region) |>
+  summarize(mean_Sales = mean(Sales), 
+            med_Sales = median(Sales),
+            sd_Sales = sd(Sales),
+            IQR_Sales = IQR(Sales))
+```
+
+Summary statistics of Profit per Category of product.
+
+```{r}
+# Numerical Summary Statistics 
+superstore |>
+  group_by(Category) |>
+  summarize(mean_Profit = mean(Profit), 
+            med_Profit = median(Profit),
+            sd_Profit = sd(Profit),
+            IQR_Profit = IQR(Profit))
+```
+
+Summary statistics of Quantity per Ship Mode.
+
+```{r}
+# Numerical Summary Statistics 
+superstore |>
+  group_by(Ship_Mode) |>
+  summarize(mean_Quantity = mean(Quantity), 
+            med_Quantity = median(Quantity),
+            sd_Quantity = sd(Quantity),
+            IQR_Quantity = IQR(Quantity))
+```
+
+Finally, I'll look at summary statistics of Discount per Segment of customers.
+
+```{r}
+# Numerical Summary Statistics 
+superstore |>
+  group_by(Segment) |>
+  summarize(mean_Discount = mean(Discount), 
+            med_Discount = median(Discount),
+            sd_Discount = sd(Discount),
+            IQR_Discount = IQR(Discount))
+```
+
+#### Plots
 
 -   Create at least six plots
 
