@@ -391,12 +391,50 @@ superstore |>
 
 #### Plots
 
--   Create at least six plots
+```{r}
+ggplot(superstore, aes(Discount)) + 
+  geom_density(alpha = 0.5, aes(fill = Category)) +
+  labs(title = "Density Plot of Discounts per Product Category")
+```
 
-    -   At least four of these should display multivariate information via the type of graph, by utilizing coloring, grouping, etc.
+```{r}
+ggplot(superstore, aes(Quantity)) + 
+  geom_density(alpha = 0.5, aes(fill = Region)) +
+  labs(title = "Density Plot of Product Quantity Sold per Region")
+```
 
-    -   All plots should have nice labels and titles.
+```{r}
+# Filter to only show profit within one standard deviation
+ggplot(superstore |> filter(abs(Profit) <= mean(Profit) + (sd(Profit))), 
+       aes(Profit)) + 
+  geom_density(alpha = 0.5, aes(fill = Region)) +
+  labs(title = "Density Plot of Profit per Region")
+```
 
-    -   Some kind of faceting should be used somewhere.
+```{r}
+ggplot(superstore, aes(Sales, Profit, color = Category)) +
+  geom_point() +
+  labs(title = "Sales vs Profit for Product Categories")
+```
 
-    -   At least one plot should be a plot that we didn't cover in class.
+```{r}
+# Filter to only show profit within one standard deviation
+ggplot(superstore |> filter(abs(Profit) <= mean(Profit) + (sd(Profit))), 
+       aes(Segment, Profit, color = Segment)) +
+  geom_boxplot() +
+  facet_wrap(~ Region) +
+  labs(title = "Boxplot of Profit per Customer Segment per Region")
+```
+
+```{r}
+# Find the proportion of each group
+store_heat <- superstore |>
+  group_by(Sub_Category, Segment) |>
+  summarize(Count = n(), .groups = "drop") |>
+  mutate(Proportion = Count / sum(Count))
+
+# Create a heatmap using the proportion of each group
+ggplot(store_heat, aes(Segment, Sub_Category, fill = Proportion)) +
+         geom_tile() +
+  labs(title = "Proportion of Product Sub Categories per Customer Segment")
+```
