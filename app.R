@@ -8,42 +8,94 @@ ui <- page_sidebar(
   sidebar = sidebar(
     "Temporary",
     selectInput(
-      inputId = "ship",
-      label = "Shipping Mode",
+      inputId = "segment",
+      label = "Segment",
       choices = 
         list(
-          "Same Day",
-          "First Class",
-          "Second Class",
-          "Standard Class"
+          "All",
+          "Consumer",
+          "Corporate",
+          "Home Office"
         ),
-      selected = "Standard Class"
+      selected = "All"
+    ),
+    selectInput(
+      inputId = "category",
+      label = "Category",
+      choices = 
+        list(
+          "All",
+          "Office Supplies",
+          "Furniture",
+          "Technology"
+        ),
+      selected = "All"
     ),
     selectInput(
       inputId = "region",
       label = "Region",
       choices = 
         list(
+          "All",
           "Central",
           "South",
           "East",
           "West"
         ),
-      selected = "Central"
+      selected = "All"
+    ),
+    selectInput(
+      inputId = "ship",
+      label = "Shipping Mode",
+      choices = 
+        list(
+          "All",
+          "Same Day",
+          "First Class",
+          "Second Class",
+          "Standard Class"
+        ),
+      selected = "All"
+    ),
+    selectInput(
+      inputId = "num1",
+      label = "Select Numeric Variable 1",
+      choices = 
+        list(
+          "Sales",
+          "Quantity",
+          "Discount",
+          "Profit"
+        ),
+      selected = "Sales"
     ),
     sliderInput(
-      inputId = "quantity",
-      label = "Quantity",
+      inputId = "slider1",
+      label = "Numeric Variable 1",
       min = 1,
       max = 100,
-      value = c(1,100)
+      value = c(1,100),
+      step = 0.1
+    ),
+    selectInput(
+      inputId = "num2",
+      label = "Select Numeric Variable 2",
+      choices = 
+        list(
+          "Sales",
+          "Quantity",
+          "Discount",
+          "Profit"
+        ),
+      selected = "Quantity"
     ),
     sliderInput(
-      inputId = "profit",
-      label = "Profit",
+      inputId = "slider2",
+      label = "Numeric Variable 2",
       min = 1,
       max = 100,
-      value = c(1,100)
+      value = c(1,100),
+      step = 0.1
     ),
     actionButton(
       inputId =  "subset",
@@ -62,10 +114,74 @@ ui <- page_sidebar(
 )
 
 # Define the Server
-server <- function(input, output) {
+server <- function(input, output, session) {
   # Load the dataset once
-  superstore <- read_excel("US Superstore data.xls", sheet = 1)
+  superstore <- read_excel("US Superstore data.xls", sheet = 1,
+                           col_names = c("Row_ID", "Order_ID", "Order_Date",
+                                         "Ship_Date", "Ship_Mode", "Customer_ID",
+                                         "Customer_Name", "Segment", "Country",
+                                         "City", "State", "Postal_Code",
+                                         "Region", "Product_ID", "Category",
+                                         "Sub_Category", "Product_Name", "Sales",
+                                         "Quantity", "Discount", "Profit"),
+                           col_types = c("numeric", "text", "date", "date",
+                                         "text", "text", "text", "text", "text",
+                                         "text", "text", "text", "text", "text",
+                                         "text", "text", "text", "numeric",
+                                         "numeric", "numeric", "numeric"),
+                           skip = 1
+  )
   
+  
+  #This code makes sure the select boxes update so they can't select the same variable in both!
+  #first, update the 'num2' selections available
+  observeEvent(input$num1, {
+    num1 <- input$num1
+    num2 <- input$num2
+    choices <- c("Sales","Quantity","Discount","Profit")
+    if (num1 != num2){
+      choices <- choices[-which(choices == num1)]
+      updateSelectizeInput(session,
+                           "num2",
+                           choices = choices,
+                           selected = num2)
+    }
+  })
+  #now, update the 'num1' selections available
+  observeEvent(input$num2, {
+    num1 <- input$num1
+    num2 <- input$num2
+    choices <- c("Sales","Quantity","Discount","Profit")
+    if (num1 != num2){
+      choices <- choices[-which(choices == num2)]
+      updateSelectizeInput(session,
+                           "num1",
+                           choices = choices,
+                           selected = num1)
+    }
+  })
+  
+  # Update the Numeric Variable Selection
+  observe({
+  updateSliderInput(session,
+                    "slider1",
+                    label = input$num1,
+                    min = min(round(superstore[[input$num1]], 1)),
+                    max = max(round(superstore[[input$num1]], 1)),
+                    value = range(superstore[[input$num1]]),
+                    step = 0.1)
+  })
+  
+  observe({
+    updateSliderInput(session,
+                      "slider2",
+                      label = input$num2,
+                      min = min(round(superstore[[input$num2]], 1)),
+                      max = max(round(superstore[[input$num2]], 1)),
+                      value = range(superstore[[input$num2]]),
+                      step = 0.1)
+  })
+    
   output$table <- renderTable({
     # Dependent on Pressing the Button
     input$subset
