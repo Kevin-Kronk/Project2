@@ -1,6 +1,8 @@
 library(shiny)
 library(bslib)
 library(readxl)
+library(tidyverse)
+library(DT)
 
 # Define the UI
 ui <- page_sidebar(
@@ -62,41 +64,33 @@ ui <- page_sidebar(
       label = "Select Numeric Variable 1",
       choices = 
         list(
+          "None",
           "Sales",
           "Quantity",
           "Discount",
           "Profit"
         ),
-      selected = "Sales"
+      selected = "None"
     ),
-    sliderInput(
-      inputId = "slider1",
-      label = "Numeric Variable 1",
-      min = 1,
-      max = 100,
-      value = c(1,100),
-      step = 0.1
-    ),
+    
+    uiOutput("slider1"), 
+    
     selectInput(
       inputId = "num2",
       label = "Select Numeric Variable 2",
       choices = 
         list(
+          "None",
           "Sales",
           "Quantity",
           "Discount",
           "Profit"
         ),
-      selected = "Quantity"
+      selected = "None"
     ),
-    sliderInput(
-      inputId = "slider2",
-      label = "Numeric Variable 2",
-      min = 1,
-      max = 100,
-      value = c(1,100),
-      step = 0.1
-    ),
+    
+    uiOutput("slider2"),
+    
     actionButton(
       inputId =  "subset",
       label = "Get The Data!"
@@ -106,7 +100,7 @@ ui <- page_sidebar(
     nav_panel("About",
               "Describe the purpose of the app."),
     nav_panel("Data Download",
-              tableOutput(outputId = "table")  
+              DT::dataTableOutput(outputId = "table")
     ),
     nav_panel("Data Exploration",
               "Allow the user to obtain the numeric and graphical summaries.")
@@ -138,58 +132,76 @@ server <- function(input, output, session) {
   observeEvent(input$num1, {
     num1 <- input$num1
     num2 <- input$num2
-    choices <- c("Sales","Quantity","Discount","Profit")
-    if (num1 != num2){
+    choices <- c("None", "Sales","Quantity","Discount","Profit")
+    if (num1 != "None") {
       choices <- choices[-which(choices == num1)]
-      updateSelectizeInput(session,
-                           "num2",
-                           choices = choices,
-                           selected = num2)
     }
+    updateSelectizeInput(session,
+                         "num2",
+                         choices = choices,
+                         selected = num2)
   })
+  
   #now, update the 'num1' selections available
   observeEvent(input$num2, {
     num1 <- input$num1
     num2 <- input$num2
-    choices <- c("Sales","Quantity","Discount","Profit")
-    if (num1 != num2){
+    choices <- c("None", "Sales","Quantity","Discount","Profit")
+    if (num2 != "None") {
       choices <- choices[-which(choices == num2)]
-      updateSelectizeInput(session,
-                           "num1",
-                           choices = choices,
-                           selected = num1)
     }
+    updateSelectizeInput(session,
+                         "num1",
+                         choices = choices,
+                         selected = num1)
   })
   
   # Update the Numeric Variable Selection
-  observe({
-  updateSliderInput(session,
-                    "slider1",
-                    label = input$num1,
-                    min = min(round(superstore[[input$num1]], 1)),
-                    max = max(round(superstore[[input$num1]], 1)),
-                    value = range(superstore[[input$num1]]),
-                    step = 0.1)
+  output$slider1 <- renderUI({
+    if (input$num1 == "None") {
+      return(NULL)
+    }
+    
+    sliderInput(
+      inputId = "slider1_vals",
+      label = input$num1,
+      min = min(round(superstore[[input$num1]], 1)),
+      max = max(round(superstore[[input$num1]], 1)),
+      value = range(superstore[[input$num1]]),
+      step = 0.1
+    )
   })
   
-  observe({
-    updateSliderInput(session,
-                      "slider2",
-                      label = input$num2,
-                      min = min(round(superstore[[input$num2]], 1)),
-                      max = max(round(superstore[[input$num2]], 1)),
-                      value = range(superstore[[input$num2]]),
-                      step = 0.1)
+  output$slider2 <- renderUI({
+    if (input$num2 == "None") {
+      return(NULL)
+    }
+    
+    sliderInput(
+      inputId = "slider2_vals",
+      label = input$num2,
+      min = min(round(superstore[[input$num2]], 1)),
+      max = max(round(superstore[[input$num2]], 1)),
+      value = range(superstore[[input$num2]]),
+      step = 0.1
+    )
   })
     
-  output$table <- renderTable({
+  output$table <- DT::renderDataTable({
     # Dependent on Pressing the Button
     input$subset
 
     # Use isolate to avoid dependence on ship
     isolate(superstore |>
-    filter(superstore$`Ship Mode` == input$ship,
-           superstore$Region == input$region))
+    filter(if (input$segment != "All") superstore$Segment == input$segment
+           else TRUE,
+           if (input$category != "All") superstore$Category == input$category
+           else TRUE,
+           if (input$region != "All") superstore$Region == input$region
+           else TRUE,
+           if (input$ship != "All") superstore$Ship_Mode == input$ship
+           else TRUE
+           ))
     })
 }
 
