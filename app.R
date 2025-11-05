@@ -100,6 +100,7 @@ ui <- page_sidebar(
     nav_panel("About",
               "Describe the purpose of the app."),
     nav_panel("Data Download",
+              downloadButton(outputId = "downloadData"),
               DT::dataTableOutput(outputId = "table")
     ),
     nav_panel("Data Exploration",
@@ -186,23 +187,44 @@ server <- function(input, output, session) {
       step = 0.1
     )
   })
-    
-  output$table <- DT::renderDataTable({
+  
+  filtered_data <- reactive({
     # Dependent on Pressing the Button
     input$subset
-
-    # Use isolate to avoid dependence on ship
+    
+    # Use isolate to avoid dependence on the other widgets 
     isolate(superstore |>
-    filter(if (input$segment != "All") superstore$Segment == input$segment
-           else TRUE,
-           if (input$category != "All") superstore$Category == input$category
-           else TRUE,
-           if (input$region != "All") superstore$Region == input$region
-           else TRUE,
-           if (input$ship != "All") superstore$Ship_Mode == input$ship
-           else TRUE
-           ))
+              filter(if (input$segment != "All") superstore$Segment == input$segment
+                     else TRUE,
+                     if (input$category != "All") superstore$Category == input$category
+                     else TRUE,
+                     if (input$region != "All") superstore$Region == input$region
+                     else TRUE,
+                     if (input$ship != "All") superstore$Ship_Mode == input$ship
+                     else TRUE,
+                     if (input$num1 != "None") 
+                       (superstore[[input$num1]] >= input$slider1_vals[1] & 
+                          superstore[[input$num1]] <= input$slider1_vals[2]) else TRUE,
+                     if (input$num2 != "None") 
+                       (superstore[[input$num2]] >= input$slider2_vals[1] & 
+                          superstore[[input$num2]] <= input$slider2_vals[2]) else TRUE
+              ))
     })
+  
+    
+  output$table <- DT::renderDataTable({
+    # Output the filtered dataset
+    filtered_data()
+    })
+  
+  output$downloadData <- downloadHandler(
+    filename = function() {
+      paste("Superstore-Data-", Sys.Date(), ".csv", sep='')
+    },
+    content = function(con) {
+      write.csv(filtered_data(), con)
+    }
+  )
 }
 
 # Call the Function
