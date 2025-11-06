@@ -104,7 +104,84 @@ ui <- page_sidebar(
               DT::dataTableOutput(outputId = "table")
     ),
     nav_panel("Data Exploration",
-              "Allow the user to obtain the numeric and graphical summaries.")
+              "Get the numeric and graphical summaries of the data.",
+              radioButtons(inputId = "data_type", 
+                           label = "Type of Data to Explore",
+                           choices = list("Categorical", "Numerical"),
+                           inline = TRUE),
+              conditionalPanel(
+                condition = "input.data_type == `Categorical`",
+                headerPanel("Contingency Tables"),
+                fluidRow(column(width=6, 
+                                selectInput(
+                                  inputId = "one_cat_var",
+                                  label = "Choose a Categorical Variable:",
+                                  choices = 
+                                    list(
+                                      "Ship_Mode",
+                                      "Segment",
+                                      "Region",
+                                      "Category"
+                                    ),
+                                  selected = "Ship_Mode"
+                                )),
+                         column(width = 6,
+                                selectInput(
+                                  inputId = "two_cat_var",
+                                  label = "Choose a Second Categorical Variable:",
+                                  choices = 
+                                    list(
+                                      "Ship_Mode",
+                                      "Segment",
+                                      "Region",
+                                      "Category"
+                                    ),
+                                  selected = "Segment"
+                                ))),
+                h3(textOutput("one_way_title")),
+                tableOutput("one_way_cont"),
+                h3(textOutput("two_way_title")),
+                tableOutput("two_way_cont"),
+                headerPanel("Categorical Plot"),
+                plotOutput("bar_plot")
+              ),
+              conditionalPanel(
+                condition = "input.data_type == `Numerical`",
+                headerPanel("Summary Statistics"),
+                fluidRow(column(width=6, 
+                                selectInput(
+                                  inputId = "num_sum_stat",
+                                  label = "Choose a Numeric Variable:",
+                                  choices = 
+                                    list(
+                                      "Sales",
+                                      "Quantity",
+                                      "Discount",
+                                      "Profit"
+                                    ),
+                                  selected = "Sales"
+                                )),
+                         column(width = 6,
+                                selectInput(
+                                  inputId = "cat_level",
+                                  label = "Across Levels of Categorical Variable:",
+                                  choices = 
+                                    list(
+                                      "Ship_Mode",
+                                      "Segment",
+                                      "Region",
+                                      "Category"
+                                    ),
+                                  selected = "Ship_Mode"
+                                ))),
+                h3(textOutput("num_sum_stats_title")),
+                tableOutput("basic_sum_stats"),
+                h3(textOutput("cat_level_title")),
+                tableOutput("levels_sum_stats"),
+                headerPanel("Numerical Plot"),
+                plotOutput("density_plot")
+              )
+              ),
   )  
 )
 
@@ -225,6 +302,97 @@ server <- function(input, output, session) {
       write.csv(filtered_data(), con)
     }
   )
+  
+  # Categorical Variables
+  
+  observeEvent(input$one_cat_var, {
+    cat1 <- input$one_cat_var
+    cat2 <- input$two_cat_var
+    choices <- c("Ship_Mode", "Segment","Region","Category")
+    if (cat1 != cat2) {
+      choices <- choices[-which(choices == cat1)]
+    }
+    updateSelectizeInput(session,
+                         "two_cat_var",
+                         choices = choices,
+                         selected = cat2)
+  })
+  
+  observeEvent(input$two_cat_var, {
+    cat1 <- input$one_cat_var
+    cat2 <- input$two_cat_var
+    choices <- c("Ship_Mode", "Segment","Region","Category")
+    if (cat2 != cat1) {
+      choices <- choices[-which(choices == cat2)]
+    }
+    updateSelectizeInput(session,
+                         "one_cat_var",
+                         choices = choices,
+                         selected = cat1)
+  })
+  
+  
+  output$one_way_title <- renderText({
+    paste(input$one_cat_var, "One-Way Contingency Table")
+  })
+  
+  output$two_way_title <- renderText({
+    paste(input$one_cat_var, 
+          "and", 
+          input$two_cat_var,
+          "Two-Way Contingency Table")
+  })
+  
+  output$one_way_cont <- renderTable({
+    filtered_data() |>
+      group_by(!!sym(input$one_cat_var)) |>
+      summarize(count = n())
+  })
+  
+  output$two_way_cont <- renderTable({
+    filtered_data() |>
+      group_by(!!sym(input$one_cat_var), !!sym(input$two_cat_var)) |>
+      summarize(count = n(), .groups = "drop") |>
+      pivot_wider(names_from = !!sym(input$one_cat_var), values_from = count)
+  })
+  
+  # Numerical Variables
+  output$num_sum_stats_title <- renderText({
+    paste(input$num_sum_stat, "Summary Statistics")
+  })
+  
+  output$cat_level_title <- renderText({
+    paste(input$num_sum_stat, "Summary Statistics across levels of", 
+          input$cat_level)
+  })
+  
+  output$basic_sum_stats <- renderTable({
+    
+    sales_summary <- round(summary(filtered_data()[[input$num_sum_stat]]), 3)
+    sales_summary <- c(sales_summary, 
+                       "Std." = round(sd(filtered_data()[[input$num_sum_stat]]), 3))
+    as.data.frame(t(sales_summary))
+  })
+  
+  output$levels_sum_stats <- renderTable({
+    filtered_data() |>
+      group_by(!!sym(input$cat_level)) |>
+      summarize(mean_Sales = mean(get(input$num_sum_stat)), 
+                med_Sales = median(get(input$num_sum_stat)),
+                sd_Sales = sd(get(input$num_sum_stat)),
+                IQR_Sales = IQR(get(input$num_sum_stat)))
+  })
+  
+  output$bar_plot <- renderPlot({
+    ggplot(filtered_data(), aes(Ship_Mode)) +
+      geom_bar()
+  })
+  
+  output$density_plot <- renderPlot({
+    ggplot(filtered_data(), aes(Sales)) +
+      geom_density()
+  })
+  
 }
 
 # Call the Function

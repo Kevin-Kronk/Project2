@@ -307,8 +307,9 @@ Sales: Double
 
 ```{r}
 # Summary Statistics for Sales
-summary(superstore$Sales)
-paste0("Standard Deviation: ", round(sd(superstore$Sales), 3))
+sales_summary <- round(summary(superstore$Sales), 3)
+
+c(sales_summary, "Std." = round(sd(superstore$Sales), 3))
 ```
 
 Quantity: Double
@@ -317,8 +318,9 @@ Quantity: Double
 
 ```{r}
 # Summary Statistics for Quantity
-summary(superstore$Quantity)
-paste0("Standard Deviation: ", round(sd(superstore$Quantity), 3))
+quantity_summary <- round(summary(superstore$Quantity), 3)
+
+c(quantity_summary, "Std." = round(sd(superstore$Quantity), 3))
 ```
 
 Discount: Double
@@ -327,8 +329,9 @@ Discount: Double
 
 ```{r}
 # Summary Statistics for Discount
-summary(superstore$Discount)
-paste0("Standard Deviation: ", round(sd(superstore$Discount), 3))
+discount_summary <- round(summary(superstore$Discount), 3)
+
+c(discount_summary, "Std." = round(sd(superstore$Discount), 3))
 ```
 
 Profit: Double
@@ -337,8 +340,9 @@ Profit: Double
 
 ```{r}
 # Summary Statistics for Profit
-summary(superstore$Profit)
-paste0("Standard Deviation: ", round(sd(superstore$Profit), 3))
+profit_summary <- round(summary(superstore$Profit), 3)
+
+c(profit_summary, "Std." = round(sd(superstore$Profit), 3))
 ```
 
 We can look at the summary statistics of Sales per Region.
