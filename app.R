@@ -96,7 +96,10 @@ ui <- page_sidebar(
       label = "Get The Data!"
     )
   ),
-  div(style = "height: 1200px; overflow-y: auto;",
+  # To set it so that the navset_card_underline can scroll down
+  tags$style(HTML(".navset-card-underline .card {
+                  max-height: 1200px;
+                  overflow-y: auto;}")),
   navset_card_underline(
     nav_panel("About",
               "Describe the purpose of the app."),
@@ -105,14 +108,13 @@ ui <- page_sidebar(
               DT::dataTableOutput(outputId = "table")
     ),
     nav_panel("Data Exploration",
-              "Get the numeric and graphical summaries of the data.",
+              headerPanel("Data Selection"),
               radioButtons(inputId = "data_type", 
                            label = "Type of Data to Explore",
                            choices = list("Categorical", "Numerical"),
                            inline = TRUE),
               conditionalPanel(
                 condition = "input.data_type == `Categorical`",
-                headerPanel("Contingency Tables"),
                 fluidRow(column(width=4, 
                                 selectInput(
                                   inputId = "one_cat_var",
@@ -156,14 +158,15 @@ ui <- page_sidebar(
                 tableOutput("one_way_cont"),
                 h3(textOutput("two_way_title")),
                 tableOutput("two_way_cont"),
-                headerPanel("Plots"),
+                h3(textOutput("bar_title")),
                 plotOutput("bar_plot"),
+                h3(textOutput("box_title")),
                 plotOutput("box_plot"),
+                h3(textOutput("heatmap_title")),
                 plotOutput("heatmap")
               ),
               conditionalPanel(
                 condition = "input.data_type == `Numerical`",
-                headerPanel("Summary Statistics"),
                 fluidRow(column(width=4, 
                                 selectInput(
                                   inputId = "num_sum_stat",
@@ -207,13 +210,15 @@ ui <- page_sidebar(
                 tableOutput("basic_sum_stats"),
                 h3(textOutput("cat_level_title")),
                 tableOutput("levels_sum_stats"),
-                headerPanel("Plots"),
+                h3(textOutput("density_title")),
                 plotOutput("density_plot"),
+                h3(textOutput("layered_density_title")),
                 plotOutput("layered_density_plot"),
+                h3(textOutput("scatter_title")),
                 plotOutput("scatter_plot")
+                )
               )
-              ),
-  ))  
+  )
 )
 
 # Define the Server
@@ -387,9 +392,19 @@ server <- function(input, output, session) {
       pivot_wider(names_from = !!sym(input$one_cat_var), values_from = count)
   })
   
+  output$bar_title <- renderText({
+    paste("Bar Plot of", input$one_cat_var)
+  })
+  
   output$bar_plot <- renderPlot({
     ggplot(filtered_data(), aes(!!sym(input$one_cat_var))) +
       geom_bar()
+  })
+  
+  output$box_title <- renderText({
+    paste("Box Plot of", input$three_num_var,
+          "by", input$one_cat_var,
+          "faceted by", input$two_cat_var)
   })
   
   # Not a Categorical Plot, but its using two categorical variables for the
@@ -400,8 +415,12 @@ server <- function(input, output, session) {
                !!sym(input$three_num_var), 
                color = !!sym(input$one_cat_var))) +
       geom_boxplot() +
-      facet_wrap(as.formula(paste("~", input$two_cat_var))) +
-      labs(title = "Boxplot of Profit per Customer Segment per Region")
+      facet_wrap(as.formula(paste("~", input$two_cat_var)))
+  })
+  
+  output$heatmap_title <- renderText({
+    paste("Proportion Heatmap of", input$one_cat_var, 
+          "per", input$two_cat_var)
   })
   
   output$heatmap <- renderPlot({
@@ -414,8 +433,7 @@ server <- function(input, output, session) {
     ggplot(store_heat, aes(!!sym(input$one_cat_var), 
                            !!sym(input$two_cat_var), 
                            fill = Proportion)) +
-      geom_tile() +
-      labs(title = "Proportion of Product Sub Categories per Customer Segment")
+      geom_tile() 
   })
   
   
@@ -477,24 +495,35 @@ server <- function(input, output, session) {
                          input$num_sum_stat) := IQR(get(input$num_sum_stat)))
   })
   
+  output$density_title <- renderText({
+    paste("Density Plot of", input$num_sum_stat)
+  })
+  
   output$density_plot <- renderPlot({
     ggplot(filtered_data(), aes(!!sym(input$num_sum_stat))) +
       geom_density(alpha = 0.5)
   })
   
+  output$layered_density_title <- renderText({
+    paste("Density Plot of", input$num_sum_stat, 
+          "per", input$cat_level)
+  })
+  
   output$layered_density_plot <- renderPlot({
     ggplot(filtered_data(), aes(!!sym(input$num_sum_stat))) + 
-      geom_density(alpha = 0.5, aes(fill = !!sym(input$cat_level))) +
-      labs(title = paste("Density Plot of", input$num_sum_stat,
-                         "per Level of", input$cat_level))
+      geom_density(alpha = 0.5, aes(fill = !!sym(input$cat_level)))
+  })
+  
+  output$scatter_title <- renderText({
+    paste(input$num_sum_stat, "vs",
+          input$num_sum_stat_2, "Scatter Plot")
   })
   
   output$scatter_plot <- renderPlot({
     ggplot(filtered_data(), aes(!!sym(input$num_sum_stat), 
                                 !!sym(input$num_sum_stat_2),
                                 color = !!sym(input$cat_level))) +
-      geom_point() +
-      labs(title = "Sales vs Profit for Product Categories")
+      geom_point()
   })
   
 }
