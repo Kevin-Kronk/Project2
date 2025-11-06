@@ -96,6 +96,7 @@ ui <- page_sidebar(
       label = "Get The Data!"
     )
   ),
+  div(style = "height: 1200px; overflow-y: auto;",
   navset_card_underline(
     nav_panel("About",
               "Describe the purpose of the app."),
@@ -112,7 +113,7 @@ ui <- page_sidebar(
               conditionalPanel(
                 condition = "input.data_type == `Categorical`",
                 headerPanel("Contingency Tables"),
-                fluidRow(column(width=6, 
+                fluidRow(column(width=4, 
                                 selectInput(
                                   inputId = "one_cat_var",
                                   label = "Choose a Categorical Variable:",
@@ -125,7 +126,7 @@ ui <- page_sidebar(
                                     ),
                                   selected = "Ship_Mode"
                                 )),
-                         column(width = 6,
+                         column(width = 4,
                                 selectInput(
                                   inputId = "two_cat_var",
                                   label = "Choose a Second Categorical Variable:",
@@ -137,21 +138,36 @@ ui <- page_sidebar(
                                       "Category"
                                     ),
                                   selected = "Segment"
+                                )),
+                         column(width = 4,
+                                selectInput(
+                                  inputId = "three_num_var",
+                                  label = "Choose a Plot Numerical Variable:",
+                                  choices = 
+                                    list(
+                                      "Sales",
+                                      "Quantity",
+                                      "Discount",
+                                      "Profit"
+                                    ),
+                                  selected = "Sales"
                                 ))),
                 h3(textOutput("one_way_title")),
                 tableOutput("one_way_cont"),
                 h3(textOutput("two_way_title")),
                 tableOutput("two_way_cont"),
-                headerPanel("Categorical Plot"),
-                plotOutput("bar_plot")
+                headerPanel("Plots"),
+                plotOutput("bar_plot"),
+                plotOutput("box_plot"),
+                plotOutput("heatmap")
               ),
               conditionalPanel(
                 condition = "input.data_type == `Numerical`",
                 headerPanel("Summary Statistics"),
-                fluidRow(column(width=6, 
+                fluidRow(column(width=4, 
                                 selectInput(
                                   inputId = "num_sum_stat",
-                                  label = "Choose a Numeric Variable:",
+                                  label = "Choose a Numerical Variable:",
                                   choices = 
                                     list(
                                       "Sales",
@@ -161,7 +177,7 @@ ui <- page_sidebar(
                                     ),
                                   selected = "Sales"
                                 )),
-                         column(width = 6,
+                         column(width = 4,
                                 selectInput(
                                   inputId = "cat_level",
                                   label = "Across Levels of Categorical Variable:",
@@ -173,16 +189,31 @@ ui <- page_sidebar(
                                       "Category"
                                     ),
                                   selected = "Ship_Mode"
-                                ))),
+                                )),
+                         column(width=4, 
+                                selectInput(
+                                  inputId = "num_sum_stat_2",
+                                  label = "Choose a Plot Numerical Variable:",
+                                  choices = 
+                                    list(
+                                      "Sales",
+                                      "Quantity",
+                                      "Discount",
+                                      "Profit"
+                                    ),
+                                  selected = "Quantity"
+                                )),),
                 h3(textOutput("num_sum_stats_title")),
                 tableOutput("basic_sum_stats"),
                 h3(textOutput("cat_level_title")),
                 tableOutput("levels_sum_stats"),
-                headerPanel("Numerical Plot"),
-                plotOutput("density_plot")
+                headerPanel("Plots"),
+                plotOutput("density_plot"),
+                plotOutput("layered_density_plot"),
+                plotOutput("scatter_plot")
               )
               ),
-  )  
+  ))  
 )
 
 # Define the Server
@@ -356,7 +387,66 @@ server <- function(input, output, session) {
       pivot_wider(names_from = !!sym(input$one_cat_var), values_from = count)
   })
   
+  output$bar_plot <- renderPlot({
+    ggplot(filtered_data(), aes(!!sym(input$one_cat_var))) +
+      geom_bar()
+  })
+  
+  # Not a Categorical Plot, but its using two categorical variables for the
+  # y and facet. Also it fits more nicely on this tab. 
+  output$box_plot <- renderPlot({
+    ggplot(filtered_data(), 
+           aes(!!sym(input$one_cat_var), 
+               !!sym(input$three_num_var), 
+               color = !!sym(input$one_cat_var))) +
+      geom_boxplot() +
+      facet_wrap(as.formula(paste("~", input$two_cat_var))) +
+      labs(title = "Boxplot of Profit per Customer Segment per Region")
+  })
+  
+  output$heatmap <- renderPlot({
+    store_heat <- filtered_data() |>
+      group_by(!!sym(input$one_cat_var), !!sym(input$two_cat_var)) |>
+      summarize(Count = n(), .groups = "drop") |>
+      mutate(Proportion = Count / sum(Count))
+    
+    # Create a heatmap using the proportion of each group
+    ggplot(store_heat, aes(!!sym(input$one_cat_var), 
+                           !!sym(input$two_cat_var), 
+                           fill = Proportion)) +
+      geom_tile() +
+      labs(title = "Proportion of Product Sub Categories per Customer Segment")
+  })
+  
+  
   # Numerical Variables
+  
+  observeEvent(input$num_sum_stat, {
+    num1 <- input$num_sum_stat
+    num2 <- input$num_sum_stat_2
+    choices <- c("Sales", "Quantity","Discount","Profit")
+    if (num1 != num2) {
+      choices <- choices[-which(choices == num1)]
+    }
+    updateSelectizeInput(session,
+                         "num_sum_stat_2",
+                         choices = choices,
+                         selected = num2)
+  })
+  
+  observeEvent(input$num_sum_stat_2, {
+    num1 <- input$num_sum_stat
+    num2 <- input$num_sum_stat_2
+    choices <- c("Sales", "Quantity","Discount","Profit")
+    if (num2 != num1) {
+      choices <- choices[-which(choices == num2)]
+    }
+    updateSelectizeInput(session,
+                         "num_sum_stat",
+                         choices = choices,
+                         selected = num1)
+  })
+  
   output$num_sum_stats_title <- renderText({
     paste(input$num_sum_stat, "Summary Statistics")
   })
@@ -377,20 +467,34 @@ server <- function(input, output, session) {
   output$levels_sum_stats <- renderTable({
     filtered_data() |>
       group_by(!!sym(input$cat_level)) |>
-      summarize(mean_Sales = mean(get(input$num_sum_stat)), 
-                med_Sales = median(get(input$num_sum_stat)),
-                sd_Sales = sd(get(input$num_sum_stat)),
-                IQR_Sales = IQR(get(input$num_sum_stat)))
-  })
-  
-  output$bar_plot <- renderPlot({
-    ggplot(filtered_data(), aes(Ship_Mode)) +
-      geom_bar()
+      summarize(!!paste0("Mean_", 
+                         input$num_sum_stat) := mean(get(input$num_sum_stat)), 
+                !!paste0("Med_", 
+                         input$num_sum_stat) := median(get(input$num_sum_stat)),
+                !!paste0("SD_", 
+                         input$num_sum_stat) := sd(get(input$num_sum_stat)),
+                !!paste0("IQR_", 
+                         input$num_sum_stat) := IQR(get(input$num_sum_stat)))
   })
   
   output$density_plot <- renderPlot({
-    ggplot(filtered_data(), aes(Sales)) +
-      geom_density()
+    ggplot(filtered_data(), aes(!!sym(input$num_sum_stat))) +
+      geom_density(alpha = 0.5)
+  })
+  
+  output$layered_density_plot <- renderPlot({
+    ggplot(filtered_data(), aes(!!sym(input$num_sum_stat))) + 
+      geom_density(alpha = 0.5, aes(fill = !!sym(input$cat_level))) +
+      labs(title = paste("Density Plot of", input$num_sum_stat,
+                         "per Level of", input$cat_level))
+  })
+  
+  output$scatter_plot <- renderPlot({
+    ggplot(filtered_data(), aes(!!sym(input$num_sum_stat), 
+                                !!sym(input$num_sum_stat_2),
+                                color = !!sym(input$cat_level))) +
+      geom_point() +
+      labs(title = "Sales vs Profit for Product Categories")
   })
   
 }
