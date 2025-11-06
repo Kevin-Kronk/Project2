@@ -15,6 +15,7 @@ library(readxl)
 ```
 
 ```{r}
+# Load excel file with column names and types
 superstore <- read_excel("US Superstore data.xls", sheet = 1,
                          col_names = c("Row_ID", "Order_ID", "Order_Date",
                                        "Ship_Date", "Ship_Mode", "Customer_ID",
@@ -396,6 +397,14 @@ superstore |>
 #### Plots
 
 ```{r}
+# Basic Bar Plot for categorical data
+ggplot(superstore, aes(Ship_Mode)) +
+  geom_bar() +
+  labs(title = "Bar Plot of Shipping Modes")
+```
+
+```{r}
+# Density plot for numerical data across categories
 ggplot(superstore, aes(Discount)) + 
   geom_density(alpha = 0.5, aes(fill = Category)) +
   labs(title = "Density Plot of Discounts per Product Category")
@@ -416,12 +425,14 @@ ggplot(superstore |> filter(abs(Profit) <= mean(Profit) + (sd(Profit))),
 ```
 
 ```{r}
+# Scatter plot of two numerical variables for categorical variable
 ggplot(superstore, aes(Sales, Profit, color = Category)) +
   geom_point() +
   labs(title = "Sales vs Profit for Product Categories")
 ```
 
 ```{r}
+# Box Plot of Numerical variable per categorical faceted by categorical
 # Filter to only show profit within one standard deviation
 ggplot(superstore |> filter(abs(Profit) <= mean(Profit) + (sd(Profit))), 
        aes(Segment, Profit, color = Segment)) +
@@ -437,7 +448,7 @@ store_heat <- superstore |>
   summarize(Count = n(), .groups = "drop") |>
   mutate(Proportion = Count / sum(Count))
 
-# Create a heatmap using the proportion of each group
+# Create a heatmap using the proportion of each categorical group
 ggplot(store_heat, aes(Segment, Sub_Category, fill = Proportion)) +
          geom_tile() +
   labs(title = "Proportion of Product Sub Categories per Customer Segment")
