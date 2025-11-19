@@ -210,11 +210,11 @@ ui <- page_sidebar(
                 h3(textOutput("two_way_title")),
                 tableOutput("two_way_cont"),
                 h3(textOutput("bar_title")),
-                plotOutput("bar_plot"),
+                plotOutput("bar_plot", height = "33%"),
                 h3(textOutput("box_title")),
-                plotOutput("box_plot"),
+                plotOutput("box_plot", height = "33%"),
                 h3(textOutput("heatmap_title")),
-                plotOutput("heatmap")
+                plotOutput("heatmap", height = "33%")
                 ),
               
               # Only shows panel when Numerical is selected
@@ -276,11 +276,11 @@ ui <- page_sidebar(
                 h3(textOutput("cat_level_title")),
                 tableOutput("levels_sum_stats"),
                 h3(textOutput("density_title")),
-                plotOutput("density_plot"),
+                plotOutput("density_plot", height = "33%"),
                 h3(textOutput("layered_density_title")),
-                plotOutput("layered_density_plot"),
+                plotOutput("layered_density_plot", height = "33%"),
                 h3(textOutput("scatter_title")),
-                plotOutput("scatter_plot")
+                plotOutput("scatter_plot", height = "33%")
                 )
               )
     )
