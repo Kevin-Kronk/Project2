@@ -112,9 +112,9 @@ ui <- page_sidebar(
   ),
   
   # To set it so that the navset_card_underline can fit everything and scroll
-  tags$style(HTML(".navset-card-underline .card {
-                  max-height: 1200px;
-                  overflow-y: auto;}")),
+  #tags$style(HTML(".navset-card-underline .card {
+  #                max-height: 1200px;
+  #                overflow-y: auto;}")),
   # Creates the three tabs
   navset_card_underline(
     nav_panel("About",
